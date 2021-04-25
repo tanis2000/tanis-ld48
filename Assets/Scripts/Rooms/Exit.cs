@@ -8,7 +8,13 @@ namespace App
     public class Exit : MonoBehaviour
     {
         public TriggerArea trigger;
+        public bool reached;
         
+        private void Start()
+        {
+            reached = false;
+        }
+
         private void FixedUpdate()
         {
             if (trigger.Triggered)
@@ -18,6 +24,7 @@ namespace App
                     if (triggerCollider.GetComponent<Player>() != null)
                     {
                         Debug.Log("Exit reached");
+                        reached = true;
                     }
                 }
             }

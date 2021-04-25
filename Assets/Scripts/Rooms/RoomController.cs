@@ -15,10 +15,13 @@ namespace App
         public Exit exit;
         public Transform pickupsHolder;
         public Transform enemiesHolder;
+        public Transform fishHolder;
+        public Rigidbody2D body;
 
         public float acceleration = 10f;
         public float maxAngle = 45f;
         public int totalMinions;
+        public bool userRigidBodyRotation = false;
         
         private Transform _room;
         private float angle = 0f;
@@ -26,7 +29,7 @@ namespace App
         private Vector3 initialVector;
         private Vector3 initialPosition;
         private Quaternion initialRotation;
-
+        
         private void Awake()
         {
             _room = transform;
@@ -67,13 +70,21 @@ namespace App
 
             if (dir != 0)
             {
-                angle = dir * acceleration * Time.fixedDeltaTime;
-                var currentVector = transform.position - bounds.center;
-                currentVector.z = 0;
-                var angleBetween = Vector3.Angle(initialVector, currentVector) * (Vector3.Cross(initialVector, currentVector).z > 0 ? 1 : -1);            
-                float newAngle = Mathf.Clamp(angleBetween + angle, -maxAngle, maxAngle);
-                angle = newAngle - angleBetween;
-                _room.RotateAround(bounds.center, Vector3.forward, angle);
+                if (userRigidBodyRotation)
+                {
+                    angle += dir * acceleration * Time.fixedDeltaTime;
+                    body.MoveRotation(angle);
+                }
+                else
+                {
+                     angle = dir * acceleration * Time.fixedDeltaTime;
+                     var currentVector = transform.position - bounds.center;
+                     currentVector.z = 0;
+                     var angleBetween = Vector3.Angle(initialVector, currentVector) * (Vector3.Cross(initialVector, currentVector).z > 0 ? 1 : -1);            
+                     float newAngle = Mathf.Clamp(angleBetween + angle, -maxAngle, maxAngle);
+                     angle = newAngle - angleBetween;
+                    _room.RotateAround(bounds.center, Vector3.forward, angle);
+                }
             }
         }
 
@@ -90,17 +101,24 @@ namespace App
             totalMinions = minions.Length;
         }
 
-        public void ResetOrientation()
+        public IEnumerator ResetOrientation()
         {
-            _room.localPosition = initialPosition;
-            _room.localRotation = initialRotation;
+            while (_room.localPosition != initialPosition && _room.localRotation != initialRotation)
+            {
+                _room.localPosition = Vector3.Lerp(_room.localPosition, initialPosition, Time.deltaTime);
+                _room.localRotation = Quaternion.Slerp(_room.localRotation, initialRotation, Time.deltaTime);
+                yield return null;
+                //_room.localPosition = initialPosition;
+                //_room.localRotation = initialRotation;
+            }
         }
 
         public IEnumerator Activate()
         {
             Debug.Log("Activating level");
             MusicManager.instance.CrossFade(music, false);
-            ResetOrientation();
+            exit.reached = false;
+            yield return ResetOrientation();
             yield return null;
         }
 
@@ -115,6 +133,12 @@ namespace App
             {
                 Destroy(enemy.gameObject);
             }
+            foreach (var fish in fishHolder.GetComponentsInChildren<Fish>())
+            {
+                Destroy(fish.gameObject);
+            }
+
+            DisableExit();
         }
 
         public IEnumerator PlayRoom()
@@ -136,13 +160,16 @@ namespace App
                 player.body.WakeUp();
             }
             yield return new WaitForFixedUpdate();
-            while (player.health.amount > 0 && !exit.trigger.Triggered)
+            player.body.MovePosition(playerSpawn.position);
+            player.body.bodyType = RigidbodyType2D.Dynamic;
+            //player.body.simulated = true;
+            yield return new WaitForFixedUpdate();
+            EnableExit();
+            while (player.health.amount > 0 && !exit.reached)
             {
                 yield return new WaitForFixedUpdate();
             }
             controls.LockControls();
-            yield return new WaitForFixedUpdate();
-            ResetOrientation();
             yield return new WaitForFixedUpdate();
             if (player.health.amount > 0)
             {
@@ -152,8 +179,19 @@ namespace App
             {
                 player.ShowOverhead($"You died!");
             }
+            yield return ResetOrientation();
             yield return new WaitForSeconds(5.0f);
             player.Reset();
+        }
+
+        public void DisableExit()
+        {
+            exit.gameObject.SetActive(false);
+        }
+
+        public void EnableExit()
+        {
+            exit.gameObject.SetActive(true);
         }
     }
 }

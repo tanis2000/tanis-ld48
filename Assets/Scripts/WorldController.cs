@@ -42,7 +42,7 @@ namespace App
                 yield return currentRoom.Activate();
                 yield return currentRoom.PlayRoom();
                 Debug.Log("Room finished");
-                if (player.health.amount == 0)
+                if (player.health.amount <= 0)
                 {
                     break;
                 } 
