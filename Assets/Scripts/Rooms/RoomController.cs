@@ -14,9 +14,11 @@ namespace App
         public Transform playerSpawn;
         public Exit exit;
         public Transform pickupsHolder;
+        public Transform enemiesHolder;
 
         public float acceleration = 10f;
         public float maxAngle = 45f;
+        public int totalMinions;
         
         private Transform _room;
         private float angle = 0f;
@@ -24,7 +26,6 @@ namespace App
         private Vector3 initialVector;
         private Vector3 initialPosition;
         private Quaternion initialRotation;
-        public int totalMinions;
 
         private void Awake()
         {
@@ -64,13 +65,16 @@ namespace App
                 dir = -1;
             }
 
-            angle = dir * acceleration * Time.fixedDeltaTime;
-            var currentVector = transform.position - bounds.center;
-            currentVector.z = 0;
-            var angleBetween = Vector3.Angle(initialVector, currentVector) * (Vector3.Cross(initialVector, currentVector).z > 0 ? 1 : -1);            
-            float newAngle = Mathf.Clamp(angleBetween + angle, -maxAngle, maxAngle);
-            angle = newAngle - angleBetween;
-            _room.RotateAround(bounds.center, Vector3.forward, angle);
+            if (dir != 0)
+            {
+                angle = dir * acceleration * Time.fixedDeltaTime;
+                var currentVector = transform.position - bounds.center;
+                currentVector.z = 0;
+                var angleBetween = Vector3.Angle(initialVector, currentVector) * (Vector3.Cross(initialVector, currentVector).z > 0 ? 1 : -1);            
+                float newAngle = Mathf.Clamp(angleBetween + angle, -maxAngle, maxAngle);
+                angle = newAngle - angleBetween;
+                _room.RotateAround(bounds.center, Vector3.forward, angle);
+            }
         }
 
         private void OnDrawGizmos()
@@ -95,7 +99,7 @@ namespace App
         public IEnumerator Activate()
         {
             Debug.Log("Activating level");
-            MusicManager.instance.CrossFade(music, true);
+            MusicManager.instance.CrossFade(music, false);
             ResetOrientation();
             yield return null;
         }
@@ -103,6 +107,14 @@ namespace App
         public void Deactivate()
         {
             gameObject.SetActive(false);
+            foreach (var minion in pickupsHolder.GetComponentsInChildren<Minion>())
+            {
+                Destroy(minion.gameObject);
+            }
+            foreach (var enemy in enemiesHolder.GetComponentsInChildren<Enemy>())
+            {
+                Destroy(enemy.gameObject);
+            }
         }
 
         public IEnumerator PlayRoom()
@@ -129,8 +141,17 @@ namespace App
                 yield return new WaitForFixedUpdate();
             }
             controls.LockControls();
+            yield return new WaitForFixedUpdate();
             ResetOrientation();
-            player.ShowOverhead($"{player.minionsCollected} / {totalMinions} SAVED!"); 
+            yield return new WaitForFixedUpdate();
+            if (player.health.amount > 0)
+            {
+                player.ShowOverhead($"{player.minionsCollected} / {totalMinions} SAVED!");
+            }
+            else
+            {
+                player.ShowOverhead($"You died!");
+            }
             yield return new WaitForSeconds(5.0f);
             player.Reset();
         }

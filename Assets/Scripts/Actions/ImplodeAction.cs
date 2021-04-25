@@ -6,6 +6,7 @@ namespace App
 {
     public class ImplodeAction : BaseAction
     {
+        public Player player;
         public float acceleration = 50f;
         private bool implodePressed; 
         private bool wasImplodePressed; 
@@ -19,6 +20,7 @@ namespace App
             if (wasImplodePressed)
             {
                 Implode();
+                player.PlayRandomImplode();
             }
         }
 

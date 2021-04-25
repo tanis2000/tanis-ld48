@@ -24,6 +24,27 @@ namespace App
             _instance = this;
         }
         
+        private void Update()
+        {
+            AudioSource[] sources = audioSources.ToArray();
+            foreach (AudioSource audioSource in sources)
+            {
+                if (currentAudioSource == audioSource)
+                {
+                    audioSource.volume = Mathf.Clamp01(audioSource.volume + Time.deltaTime * crossFadeSpeed);
+                }
+                else
+                {
+                    audioSource.volume = Mathf.Clamp01(audioSource.volume - Time.deltaTime * crossFadeSpeed);
+                }
+                if (audioSource != currentAudioSource && audioSource.volume < 0.01f)
+                {
+                    audioSources.Remove(audioSource);
+                    Destroy(audioSource);
+                }
+            }
+        }
+
         public void CrossFade(AudioClip music, bool startAtFull = false)
         {
             Debug.Log(string.Concat("Crossfade in ", music, " : ", startAtFull.ToString()));

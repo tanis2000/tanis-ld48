@@ -10,6 +10,7 @@ namespace App
     {
         public TriggerArea grounding;
         public Rigidbody2D body;
+        public Player player;
         public float initialForce = 1000f;
         public float maxHeldTime = 1f;
         public float timeThreshold = .2f;
@@ -60,6 +61,7 @@ namespace App
             }
             
             heldTime = 0;
+            player.PlayRandomJump();
         }
 
         private void OnDrawGizmos()

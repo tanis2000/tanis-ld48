@@ -57,6 +57,10 @@ namespace App
                 GC.Collect();
             }
             Debug.Log("Player died");
+            roomIndex = 0;
+            loop = 0;
+            player.health.amount = player.health.maxAmount;
+            StartCoroutine(MainLoop());
         }
     }
 }

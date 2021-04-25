@@ -23,6 +23,7 @@ namespace App
         private void Explode()
         {
             SpawnMinions();
+            player.PlayRandomExplode();
         }
 
         private void SpawnMinions()

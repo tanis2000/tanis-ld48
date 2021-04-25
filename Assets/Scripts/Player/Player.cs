@@ -21,11 +21,20 @@ namespace App
         public AudioSource audioSource;
         public List<AudioClip> fallClips = new List<AudioClip>();
         public List<AudioClip> pickupClips = new List<AudioClip>();
+        public List<AudioClip> jumpClips = new List<AudioClip>();
+        public List<AudioClip> idleClips = new List<AudioClip>();
+        public List<AudioClip> explodeClips = new List<AudioClip>();
+        public List<AudioClip> imploadClips = new List<AudioClip>();
         public Health health;
         public float maxVVelocity = 100f;
         public int minionsCollected = 0;
+        public float minIdle = 5f;
+        public float maxIdle = 10f;
         private Vector3 initialScale;
         private bool firstCollision;
+        private float idleTime;
+        private float nextIdle;
+        private Vector3 lastPosition;
 
         private void OnEnable()
         {
@@ -38,10 +47,30 @@ namespace App
             // Update scale
             var scale = Vector3.one * minionsCollected * .1f;
             transform.localScale = initialScale + scale;
+            
+            // Idle time
+            if (lastPosition == transform.position)
+            {
+                idleTime += Time.fixedDeltaTime;
+            }
+            else
+            {
+                idleTime = 0;
+                nextIdle = Random.Range(minIdle, maxIdle);
+                lastPosition = transform.position;
+            }
+
+            if (idleTime >= nextIdle)
+            {
+                PlayRandomIdle();
+                idleTime = 0;
+                nextIdle = Random.Range(minIdle, maxIdle);
+            }
         }
 
         private void OnCollisionEnter2D(Collision2D other)
         {
+            Debug.Log(other.gameObject.name);
             if (!firstCollision)
             {
                 // Reset max velocity limit on first collision ever
@@ -100,5 +129,38 @@ namespace App
             audioSource.clip = fallClips[(int)(Random.value % fallClips.Count)];
             audioSource.Play();
         }
+
+        public void PlayRandomJump()
+        {
+            audioSource.clip = jumpClips[(int)(Random.value % jumpClips.Count)];
+            audioSource.Play();
+        }
+
+        public void PlayRandomIdle()
+        {
+            if (audioSource.isPlaying)
+            {
+                return;
+            }
+            audioSource.clip = idleClips[(int)(Random.value % idleClips.Count)];
+            audioSource.Play();
+        }
+
+        public void PlayRandomExplode()
+        {
+            audioSource.clip = explodeClips[(int)(Random.value % explodeClips.Count)];
+            audioSource.Play();
+        }
+
+        public void PlayRandomImplode()
+        {
+            if (audioSource.isPlaying)
+            {
+                return;
+            }
+            audioSource.clip = imploadClips[(int)(Random.value % imploadClips.Count)];
+            audioSource.Play();
+        }
+
     }
 }

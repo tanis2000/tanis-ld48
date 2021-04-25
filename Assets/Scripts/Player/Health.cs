@@ -8,5 +8,10 @@ namespace App
     {
         public int amount = 1;
         public int maxAmount = 1;
+
+        public void Damage(int delta)
+        {
+            amount -= delta;
+        }
     }
 }
